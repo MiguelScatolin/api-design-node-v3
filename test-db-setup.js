@@ -4,13 +4,11 @@ import _ from 'lodash'
 import { Item } from './src/resources/item/item.model'
 import { List } from './src/resources/list/list.model'
 import { User } from './src/resources/user/user.model'
+import { MongoMemoryServer } from 'mongodb-memory-server'
+
+const mongod = new MongoMemoryServer()
 
 const models = { User, List, Item }
-
-const url =
-  process.env.MONGODB_URI ||
-  process.env.DB_URL ||
-  'mongodb://localhost:27017/tipe-devapi-testing'
 
 global.newId = () => {
   return mongoose.Types.ObjectId()
@@ -30,10 +28,12 @@ beforeEach(async done => {
     return Promise.all(_.map(mongoose.connection.collections, c => remove(c)))
   }
 
+  const url = await mongod.getUri()
+
   if (mongoose.connection.readyState === 0) {
     try {
       await mongoose.connect(
-        url + db,
+        url,
         {
           useNewUrlParser: true,
           autoIndex: true
@@ -51,11 +51,13 @@ beforeEach(async done => {
   }
   done()
 })
+
 afterEach(async done => {
   await mongoose.connection.db.dropDatabase()
   await mongoose.disconnect()
   return done()
 })
+
 afterAll(done => {
   return done()
 })
